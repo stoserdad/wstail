@@ -1,5 +1,4 @@
 import os
-import time
 import tornado.web
 import tornado.ioloop
 import tornado.process
@@ -8,14 +7,25 @@ import tornado.httpserver
 import logging
 from tornado import gen
 from tornado.options import define, options
-from logView import tail
-from tornado.ioloop import IOLoop
 
 
-tile = open('/tmp/123')
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+FILENAME = '/tmp/123'
+tailed_file = open(FILENAME)
+tailed_file.seek(os.path.getsize(FILENAME))
+define("port", default=8707, help="run on the given port", type=int)
 clients = []
-status = False
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+def send_log():
+    where = tailed_file.tell()
+    line = tailed_file.readline()
+    if not line:
+        tailed_file.seek(where)
+    else:
+        for client in clients:
+            client.write_message(line.strip())
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -31,32 +41,19 @@ class MainHandler(tornado.web.RequestHandler):
 class WebSocket(tornado.websocket.WebSocketHandler):
     @gen.coroutine
     def open(self):
-        clients.append(self)
         logging.info('client connected')
 
     def on_message(self, message):
         print(message)
-        while message == 'start':
-            time.sleep(2)
-            print(message)
-
-
-
-    @staticmethod
-    def send_log():
-        tile.seek(0, 2)
-        while True:
-            where = tile.tell()
-            line = tile.readline()
-            if not line:
-                time.sleep(0.1)
-                tile.seek(where)
-            else:
-                for client in clients:
-                    client.write_message(line.strip())
+        if message == 'start':
+            clients.append(self)
+        elif message == 'stop':
+            clients.remove(self)
 
     def on_close(self):
-        clients.remove(self)
+        logging.info('client disconnected')
+        if self in clients:
+            clients.remove(self)
 
 
 class Application(tornado.web.Application):
@@ -74,16 +71,10 @@ class Application(tornado.web.Application):
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
+
 application = Application()
-define("port", default=8707, help="run on the given port", type=int)
 http_server = tornado.httpserver.HTTPServer(application)
 http_server.listen(options.port)
+tailed_callback = tornado.ioloop.PeriodicCallback(send_log, 5)
+tailed_callback.start()
 tornado.ioloop.IOLoop.instance().start()
-
-# application = Application()
-#
-# if __name__ == "__main__":
-#     server = tornado.httpserver.HTTPServer(application)
-#     server.bind(8707)
-#     server.start(0)
-#     tornado.ioloop.IOLoop.instance().start()
