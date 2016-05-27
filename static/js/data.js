@@ -2,8 +2,7 @@
  * Created by bender on 28.04.16.
  */
 $(function(){
-    var sock;
-    sock = new WebSocket('ws://' + document.location.host + '/websocket');
+    var sock = new WebSocket('ws://' + document.location.host + '/wslog');
     var onmouse = true;
             $('#log').mouseenter(function () {
                 onmouse = false;
@@ -25,7 +24,7 @@ $(function(){
             $('#log').append(e.data + '\n');
             if (onmouse){
                 $('#log').scrollTop($('#log').get(0).scrollHeight);
-            };
+            }
         };
         $('#viewLog').click(function(){
             var current = $('#viewLog').attr('status');

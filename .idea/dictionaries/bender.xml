@@ -1,8 +1,15 @@
 <component name="ProjectDictionaryState">
   <dictionary name="bender">
     <words>
+      <w>fname</w>
+      <w>onclose</w>
+      <w>onmessage</w>
+      <w>stoporkill</w>
       <w>tfile</w>
       <w>websocket</w>
+      <w>wsase</w>
+      <w>wscpu</w>
+      <w>wslog</w>
     </words>
   </dictionary>
 </component>
